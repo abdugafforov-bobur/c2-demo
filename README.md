@@ -39,6 +39,19 @@
 
 ## Setup
 
+### Prerequisites
+
+```bash
+# Python dependencies
+pip install -r requirements.txt
+
+# For building Windows EXE agent (cross-compiler)
+sudo apt install gcc-mingw-w64 osslsigncode
+
+# For building Android APK
+# Install Android SDK + Gradle 8.5, or use the dashboard's "Generate APK" button
+```
+
 ### 1. Configure the Server URL
 
 Edit `app/build.gradle.kts` and set your server IP:
@@ -47,13 +60,20 @@ Edit `app/build.gradle.kts` and set your server IP:
 buildConfigField("String", "BEACON_URL", "\"http://192.168.1.100:8080/beacon\"")
 ```
 
-### 2. Start the Listener
+### 2. Start the Server
 
 On your training server (Kali, laptop, etc.):
 
 ```bash
 cd server/
-python3 server.py 8080
+python3 web_server.py 9090
+```
+
+Open `http://<your-ip>:9090` in a browser for the full C2 dashboard.
+
+For a lightweight CLI-only listener:
+```bash
+python3 server.py 9090
 ```
 
 ### 3. Build the APK
