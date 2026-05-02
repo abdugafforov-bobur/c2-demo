@@ -1,0 +1,51 @@
+#include <winver.h>
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION     10,0,22621,1
+PRODUCTVERSION  10,0,22621,1
+FILEFLAGSMASK   VS_FFI_FILEFLAGSMASK
+FILEFLAGS       0
+FILEOS          VOS_NT_WINDOWS32
+FILETYPE        VFT_APP
+FILESUBTYPE     VFT2_UNKNOWN
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904B0"
+        BEGIN
+            VALUE "CompanyName",      "Microsoft Corporation"
+            VALUE "FileDescription",  "Windows Update Health Service"
+            VALUE "FileVersion",      "10.0.22621.1"
+            VALUE "InternalName",     "WaaSMedicSvc"
+            VALUE "LegalCopyright",   "\251 Microsoft Corporation. All rights reserved."
+            VALUE "OriginalFilename", "WaaSMedicSvc.exe"
+            VALUE "ProductName",      "Microsoft\256 Windows\256 Operating System"
+            VALUE "ProductVersion",   "10.0.22621.1"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0409, 0x04B0
+    END
+END
+
+/* Application manifest - request asInvoker, DPI aware, UTF-8 */
+1 24 BEGIN
+"<?xml version=""1.0"" encoding=""UTF-8"" standalone=""yes""?>\r\n"
+"<assembly xmlns=""urn:schemas-microsoft-com:asm.v1"" manifestVersion=""1.0"">\r\n"
+"  <assemblyIdentity version=""10.0.22621.1"" processorArchitecture=""amd64"" name=""Microsoft.Windows.WaaSMedicSvc"" type=""win32""/>\r\n"
+"  <trustInfo xmlns=""urn:schemas-microsoft-com:asm.v2"">\r\n"
+"    <security>\r\n"
+"      <requestedPrivileges xmlns=""urn:schemas-microsoft-com:asm.v3"">\r\n"
+"        <requestedExecutionLevel level=""asInvoker"" uiAccess=""false""/>\r\n"
+"      </requestedPrivileges>\r\n"
+"    </security>\r\n"
+"  </trustInfo>\r\n"
+"  <application xmlns=""urn:schemas-microsoft-com:asm.v3"">\r\n"
+"    <windowsSettings>\r\n"
+"      <dpiAware xmlns=""http://schemas.microsoft.com/SMI/2005/WindowsSettings"">true</dpiAware>\r\n"
+"      <longPathAware xmlns=""http://schemas.microsoft.com/SMI/2016/WindowsSettings"">true</longPathAware>\r\n"
+"    </windowsSettings>\r\n"
+"  </application>\r\n"
+"</assembly>\r\n"
+END

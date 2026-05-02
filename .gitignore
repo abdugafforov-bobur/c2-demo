@@ -1,0 +1,29 @@
+# Build outputs
+app/build/
+build/
+.gradle/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Local config
+local.properties
+
+# SDK
+*.keystore
+
+# Server
+server/exfiltrated/
+server/builds/
+server/__pycache__/
+*.pyc
+
+# OS
+.DS_Store
+Thumbs.db
+
+# APK/EXE outputs
+*.apk
+*.exe
