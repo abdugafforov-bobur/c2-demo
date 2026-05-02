@@ -27,3 +27,7 @@ Thumbs.db
 # APK/EXE outputs
 *.apk
 *.exe
+
+server/templates/dashboard_*_old.html
+server/templates/dashboard_*_backup.html
+server/win_agent_original.c
